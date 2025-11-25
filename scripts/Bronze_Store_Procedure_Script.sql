@@ -1,0 +1,137 @@
+	-- For refresh the Bronze Layer you have to truncate the table and run the bulk insert query 
+	-- to get fresh new or updated data follow below steps 
+
+	CREATE OR ALTER PROCEDURE Bronze.load_Bronze AS 
+BEGIN
+
+DECLARE @Start_Time DATETIME,@End_Time DATETIME, @Batch_Start_time DATETIME, @Batch_End_Time DATETIME;
+
+	BEGIN TRY 
+		SET @Batch_Start_time = GETDATE();
+		PRINT '=======================================================================================================================================';	
+		PRINT 'Loading Bronze Layer';
+		PRINT '=======================================================================================================================================';
+
+		PRINT '----------------------------------------------------------------------------------------';
+		PRINT 'Loading CRM Tables';
+		PRINT '----------------------------------------------------------------------------------------';
+
+		SET @Start_Time = GETDATE();
+	-- Step 1 Truncate the entire table 
+		PRINT '>> Truncating Table: Bronze.crm_cust_info';
+		TRUNCATE TABLE Bronze.crm_cust_info;
+		
+		-- Step 2 do Bulk insert step to get updated data
+		PRINT '>> Incerting Data Into: Bronze.crm_cust_info';
+		BULK INSERT Bronze.crm_cust_info
+		FROM 'D:\Rohit Satpute\SQL data Warehousing Project Practice\sql-data-warehouse-project\datasets\source_crm\cust_info.CSV'
+		WITH (
+			FIRSTROW = 2,
+			FIELDTERMINATOR = ',',
+			TABLOCK
+		);
+		SET @End_Time = GETDATE();
+		PRINT '>> Load Duration: ' + CAST (DATEDIFF(Second, @Start_Time, @End_Time) AS NVARCHAR) + 'Seconds';
+		-- Step 3 RUN below query when needed to view updated table
+		-- SELECT * FROM Bronze.crm_cust_info;
+
+		PRINT '----------------------------------------------'
+		
+		SET @Start_Time = GETDATE();
+		PRINT '>> Truncating Table: Bronze.crm_prd_info';
+
+		TRUNCATE TABLE Bronze.crm_prd_info;
+	
+		PRINT '>> Inserting Table: Bronze.crm_cust_info'
+		BULK INSERT Bronze.crm_prd_info
+		FROM 'D:\Rohit Satpute\SQL data Warehousing Project Practice\sql-data-warehouse-project\datasets\source_crm\prd_info.CSV'
+		WITH (
+			FIRSTROW = 2,
+			FIELDTERMINATOR = ',',
+			TABLOCK
+		);
+		SET @End_Time = GETDATE();
+		-- SELECT * FROM Bronze.crm_prd_info;
+
+		PRINT '----------------------------------------------';
+
+		SET @Start_Time = GETDATE();
+		PRINT '>> Truncating Table: Bronze.crm_sales_details';
+		TRUNCATE TABLE Bronze.crm_sales_details;
+
+		PRINT '>> Inserting Table: Bronze.crm_sales_details';
+		BULK INSERT Bronze.crm_sales_details
+		FROM 'D:\Rohit Satpute\SQL data Warehousing Project Practice\sql-data-warehouse-project\datasets\source_crm\sales_details.CSV'
+		WITH (
+			FIRSTROW = 2,
+			FIELDTERMINATOR = ',',
+			TABLOCK
+		);
+		SET @End_Time = GETDATE();
+
+		-- SELECT * FROM Bronze.crm_sales_details;(Run the query when needed)
+
+		PRINT '----------------------------------------------------------------------------------------';
+		PRINT 'Loading CRM Tables';
+		PRINT '----------------------------------------------------------------------------------------';
+		SET @Start_Time = GETDATE();
+		PRINT '>> Truncating Table: Bronze.erp_CUST_AZ12';
+		TRUNCATE TABLE Bronze.erp_CUST_AZ12;
+
+		PRINT '>> Inserting Table: Bronze.erp_CUST_AZ12';
+		BULK INSERT Bronze.erp_CUST_AZ12
+		FROM 'D:\Rohit Satpute\SQL data Warehousing Project Practice\sql-data-warehouse-project\datasets\source_erp\CUST_AZ12.CSV'
+		WITH (
+			FIRSTROW = 2,
+			FIELDTERMINATOR = ',',
+			TABLOCK
+		);
+		SET @End_Time = GETDATE();
+
+		SELECT * FROM Bronze.erp_CUST_AZ12;
+		PRINT '----------------------------------------------';
+
+		SET @Start_Time = GETDATE();
+		PRINT '>> Truncating Table: Bronze.erp_LOC_A101';
+	
+		TRUNCATE TABLE Bronze.erp_LOC_A101
+
+		PRINT '>> Inserting Table: Bronze.erp_LOC_A101';
+		BULK INSERT Bronze.erp_LOC_A101
+		FROM 'D:\Rohit Satpute\SQL data Warehousing Project Practice\sql-data-warehouse-project\datasets\source_erp\LOC_A101.CSV'
+		WITH (
+			FIRSTROW = 2,
+			FIELDTERMINATOR = ',',
+			TABLOCK
+		);
+		SET @End_Time = GETDATE();
+
+		--SELECT * FROM Bronze.erp_LOC_A101; (RUN THE QUERY WHEN NEEDEED)
+		PRINT '----------------------------------------------';
+
+		BULK INSERT Bronze.erp_PX_CAT_G1V2
+		FROM 'D:\Rohit Satpute\SQL data Warehousing Project Practice\sql-data-warehouse-project\datasets\source_erp\PX_CAT_G1V2.CSV'
+		WITH (
+			FIRSTROW = 2,
+			FIELDTERMINATOR = ',',
+			TABLOCK
+		);
+		SET @Batch_End_Time = GETDATE();
+		PRINT '=============================================='
+		PRINT 'Loading Layer is completed';
+		PRINT 'Loading Bronze is Completed';
+		PRINT 'Total Load Duration: ' + CAST(DATEDIFF(SECOND,@Batch_Start_Date, @Batch_Time_End) AS NAVARCHAR) + 'seconds';
+		PRINT '----------------------------------------------';
+	END TRY
+	BEGIN CATCH
+		PRINT '===============================================';
+		PRINT 'ERROR OCCURED DURING LOADING BRONZE LAYER';
+		PRINT 'Error Message' + ERROR_MESSAGE();
+		PRINT 'Error Message' + CAST ( ERROR_MESSAGE() AS NVARCHAR);
+		PRINT 'Error Message' + CAST ( ERROR_STATE() AS NVARCHAR);
+
+		PRINT '===============================================';
+	END CATCH
+END
+
+EXEC Bronze.load_Bronze;
